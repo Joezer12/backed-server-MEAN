@@ -1,0 +1,20 @@
+{
+  "bracketSameLine": true,
+  "endOfLine": "lf",
+  "prettier.useTabs": true,
+  "prettier.tabWidth": 2,
+  "printWidth": 120,
+  "bracketSpacing": true,
+  "singleQuote": true,
+  "htmlWhitespaceSensitivity": "ignore",
+  "overrides": [
+    {
+      "files": "*.html",
+      "options": {
+        "tabWidth": 4,
+        "printWidth": 140,
+        "jsxBracketSameLine": false
+      }
+    }
+  ]
+}
