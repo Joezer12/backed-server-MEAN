@@ -15,19 +15,29 @@ var router = express();
 // GET -- Obtener todos los usuarios
 // =====================================================================
 router.get('/', (req, res) => {
-  Usuario.find({}, 'nombre email img role').exec((err, usuarios) => {
-    if (err) {
-      return res.status(500).json({
-        ok: false,
-        mensaje: 'Fallo al cargar usuarios',
-        error: err
+  var desde = req.query.desde || 0;
+  desde = Number(desde);
+
+  Usuario.find({}, 'nombre email img role')
+    .skip(desde)
+    .limit(5)
+    .exec((err, usuarios) => {
+      if (err) {
+        return res.status(500).json({
+          ok: false,
+          mensaje: 'Fallo al cargar usuarios',
+          error: err
+        });
+      }
+      Usuario.count({}, (err, count) => {
+        res.status(200).json({
+          ok: true,
+          usuarios: usuarios,
+          page: desde + 1 + ' de ' + (desde + 5),
+          total: count
+        });
       });
-    }
-    res.status(200).json({
-      ok: true,
-      usuarios: usuarios
     });
-  });
 });
 
 // ===================================================================================================
