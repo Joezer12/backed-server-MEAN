@@ -1,2 +1,7 @@
 # Modulos de Node
 node_modules/
+google-signin-demo/node_modules/
+
+.eslintrc.json
+.jshintrc
+.prettierrc

@@ -1,11 +1,9 @@
 {
   "env": {
-    "es6": true,
     "node": true
   },
   "extends": "eslint:recommended",
   "globals": {
-    "es6": true,
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
   },
