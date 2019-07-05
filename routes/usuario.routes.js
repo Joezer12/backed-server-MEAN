@@ -16,11 +16,15 @@ var router = express();
 // =====================================================================
 router.get('/', (req, res) => {
   var desde = req.query.desde || 0;
+  var limite = req.query.limite || 5;
+  var hasta;
+
   desde = Number(desde);
+  limite = Number(limite);
 
   Usuario.find({}, 'nombre email img role google')
     .skip(desde)
-    .limit(5)
+    .limit(limite)
     .exec((err, usuarios) => {
       if (err) {
         return res.status(500).json({
@@ -30,10 +34,11 @@ router.get('/', (req, res) => {
         });
       }
       Usuario.count({}, (err, count) => {
+        hasta = desde + 5 > count ? count : desde + 5;
         res.status(200).json({
           ok: true,
           usuarios: usuarios,
-          page: desde + 1 + ' al ' + (desde + 5),
+          page: desde + 1 + ' al ' + hasta,
           total: count
         });
       });

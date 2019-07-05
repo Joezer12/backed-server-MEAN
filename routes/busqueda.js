@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 var express = require('express');
 var Hospital = require('../models/hospital');
 var Medico = require('../models/medico');
@@ -24,45 +25,65 @@ busqueda.get('/todo/:busqueda', (req, res) => {
   );
 });
 
-function buscarHospitales(busqueda, rgx) {
+function buscarHospitales(busqueda, rgx, desde, limite) {
   return new Promise((resolve, reject) => {
     Hospital.find({ nombre: rgx })
+      .skip(desde)
+      .limit(limite)
       .populate('usuario', 'nombre email')
       .exec((err, hospitales) => {
         if (err) {
           return reject('Error al buscar hospitales', err);
-        } else {
-          resolve(hospitales);
         }
+        Hospital.count({ nombre: rgx }).exec((err, count) => {
+          if (err) {
+            return reject('Error al buscar usuarios', err);
+          }
+          resolve({ hospitales, count });
+        });
       });
   });
 }
 
-function buscarMedicos(busqueda, rgx) {
+function buscarMedicos(busqueda, rgx, desde, limite) {
   return new Promise((resolve, reject) => {
     Medico.find({ nombre: rgx })
+      .skip(desde)
+      .limit(limite)
       .populate('usuario', 'nombre email')
       .populate('hospital', 'nombre')
       .exec((err, medicos) => {
         if (err) {
           return reject('Error al buscar médicos', err);
-        } else {
-          resolve(medicos);
         }
+        Medico.count({ nombre: rgx }).exec((err, count) => {
+          if (err) {
+            return reject('Error al buscar usuarios', err);
+          }
+          resolve({ medicos, count });
+        });
       });
   });
 }
 
-function buscarUsuarios(busqueda, rgx) {
+function buscarUsuarios(busqueda, rgx, desde, limite) {
   return new Promise((resolve, reject) => {
-    Usuario.find({}, 'nombre email role')
+    Usuario.find({}, 'nombre email role google')
+      .skip(desde)
+      .limit(limite)
       .or([{ nombre: rgx }, { email: rgx }])
       .exec((err, usuarios) => {
         if (err) {
           return reject('Error al buscar usuarios', err);
-        } else {
-          resolve(usuarios);
         }
+        Usuario.count()
+          .or([{ nombre: rgx }, { email: rgx }])
+          .exec((err, count) => {
+            if (err) {
+              return reject('Error al buscar usuarios', err);
+            }
+            resolve({ usuarios, count });
+          });
       });
   });
 }
@@ -70,21 +91,26 @@ function buscarUsuarios(busqueda, rgx) {
 // ===================================================================================================
 // BUSQUEDA -- Especifica por colección
 // ===================================================================================================
-busqueda.get('/coleccion/:tabla/:busqueda', (req, res) => {
+busqueda.get('/:tabla/:busqueda', (req, res) => {
   var busqueda = req.params.busqueda;
   var tabla = req.params.tabla;
+  var desde = req.query.desde || 0;
+  var limite = req.query.limite || 5;
+  var hasta;
   var rgx = new RegExp(busqueda, 'i');
   var promesa;
 
+  desde = Number(desde);
+  limite = Number(limite);
   switch (tabla) {
     case 'medicos':
-      promesa = buscarMedicos(busqueda, rgx);
+      promesa = buscarMedicos(busqueda, rgx, desde, limite);
       break;
     case 'hospitales':
-      promesa = buscarHospitales(busqueda, rgx);
+      promesa = buscarHospitales(busqueda, rgx, desde, limite);
       break;
     case 'usuarios':
-      promesa = buscarUsuarios(busqueda, rgx);
+      promesa = buscarUsuarios(busqueda, rgx, desde, limite);
       break;
     default:
       res.status(400).json({
@@ -94,10 +120,13 @@ busqueda.get('/coleccion/:tabla/:busqueda', (req, res) => {
       });
   }
 
-  promesa.then(respuesta => {
+  promesa.then(resp => {
+    hasta = desde + 5 > resp.count ? resp.count : desde + 5;
     res.status(200).json({
       ok: true,
-      [tabla]: respuesta
+      [tabla]: resp.usuarios || resp.medicos || resp.hospitales,
+      total: resp.count,
+      page: desde + 1 + ' al ' + hasta
     });
   });
 });
