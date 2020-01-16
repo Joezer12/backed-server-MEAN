@@ -9,7 +9,7 @@ var jwt = require('jsonwebtoken');
 var SEED = require('../config/config').SEED;
 var CLIENT_ID = require('../config/config').CLIENT_ID;
 const client = new OAuth2Client(CLIENT_ID);
-
+var verityToken = require('../middleware/autenticacion').verificaToken;
 // ===================================================================================================
 // INICIALIZACION de variables y librerías
 // ===================================================================================================
@@ -58,6 +58,22 @@ login.post('/', (req, res) => {
       id: usuarioDB.id,
       token: token
     });
+  });
+});
+
+// ===================================================================================================
+// POST -- Autenticación normal
+// ===================================================================================================
+login.get('/renuevatoken', verityToken, (req, res) => {
+  // ===================================================================================================
+  // TOKEN -- Aquí se debe generar
+  // ===================================================================================================
+  // usuario.password = '';
+  var token = jwt.sign({ usuario: req.usuario }, SEED, { expiresIn: 60 * 60 });
+
+  res.status(201).json({
+    ok: true,
+    token: token
   });
 });
 
